@@ -1,0 +1,1502 @@
+/*
+  Monochrome palette: white background, black as the single accent — replaces
+  the earlier navy/cyan Proposify-derived scheme. Status colours (danger/
+  warning/success) are left alone on purpose: those carry meaning (error vs.
+  passed vs. caution), and flattening them to black/white would make banners
+  indistinguishable from each other. The .showcase section (the dark
+  dot-grid/tablet mockup) also keeps its own reference-matched colours — it's
+  a literal recreation of a specific design, not part of the site's chrome.
+*/
+:root {
+  /* "Brand" header/hero background — was a fixed navy that didn't invert
+     with color scheme; now white, so it DOES need a dark-mode override
+     below, or it'd stay a white band on an otherwise black page. */
+  --brand-navy: #ffffff;
+  --brand-navy-text: #000000;
+
+  --text: #1a1a1a;
+  --text-h: #000000;
+  --text-muted: #6b6b6b;
+  --bg: #f8f8f7;
+  --bg-surface: #ffffff;
+  --bg-raised: #f2f2f2;
+  --border: #e2e2e2;
+  --accent: #000000;
+  --accent-text: #ffffff;
+  --accent-bg: rgba(0, 0, 0, 0.06);
+  --accent-border: rgba(0, 0, 0, 0.35);
+  --ink: #000000;
+  --ink-text: #ffffff;
+  --blank-bg: rgba(59, 130, 246, 0.16);
+  --blank-border: rgba(0, 0, 0, 0.25);
+  --blank-text: #000000;
+  --danger: #b3261e;
+  --danger-bg: rgba(179, 38, 30, 0.08);
+  --danger-border: rgba(179, 38, 30, 0.35);
+  --warning: #8a5a00;
+  --warning-bg: rgba(202, 138, 4, 0.12);
+  --warning-border: rgba(202, 138, 4, 0.4);
+  --success: #1a7f37;
+  --success-bg: rgba(26, 127, 55, 0.08);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.1);
+
+  --sans: 'DM Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  color-scheme: light dark;
+  font: 16px/1.5 var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand-navy: #000000;
+    --brand-navy-text: #ffffff;
+
+    --text: #e5e5e5;
+    --text-h: #ffffff;
+    --text-muted: #9a9a9a;
+    --bg: #000000;
+    --bg-surface: #0a0a0a;
+    --bg-raised: #1a1a1a;
+    --border: #2a2a2a;
+    --accent: #ffffff;
+    --accent-text: #000000;
+    --accent-bg: rgba(255, 255, 255, 0.08);
+    --accent-border: rgba(255, 255, 255, 0.35);
+    --ink: #ffffff;
+    --ink-text: #000000;
+    --blank-bg: rgba(96, 165, 250, 0.22);
+    --blank-border: rgba(255, 255, 255, 0.3);
+    --blank-text: #ffffff;
+    --danger: #ff6b63;
+    --danger-bg: rgba(255, 107, 99, 0.12);
+    --danger-border: rgba(255, 107, 99, 0.35);
+    --warning: #e0a92c;
+    --warning-bg: rgba(224, 169, 44, 0.14);
+    --warning-border: rgba(224, 169, 44, 0.4);
+    --success: #5fd889;
+    --success-bg: rgba(95, 216, 137, 0.1);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 32px rgba(0, 0, 0, 0.5);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1, h2, h3 {
+  color: var(--text-h);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { font-size: 1.5rem; margin: 0 0 4px; }
+h2 { font-size: 1.15rem; margin: 0 0 12px; }
+h3 { font-size: 1rem; margin: 0 0 6px; }
+
+a {
+  color: var(--accent);
+}
+
+code {
+  font-family: var(--mono);
+  background: var(--bg-raised);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.9em;
+}
+
+.app-shell {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+  min-height: 100svh;
+}
+
+/* Persistent dark navy header — proposify.com keeps this band dark the whole
+   page down, not just in the hero, so it stays put across every screen here
+   rather than switching to a light nav on non-hero pages. */
+/* True full-bleed: .app-shell caps out at max-width:1000px, so a plain
+   negative margin only cancels its own padding and stops at that 1000px
+   edge — on any wider viewport the color visibly stops short of the true
+   screen edge. calc(50% - 50vw) computes relative to the actual viewport
+   instead, and cancels out correctly however wide .app-shell's own padding
+   or max-width happens to be, as long as .app-shell stays centered. */
+/* Full-bleed cancels .app-shell's own padding — applied once here to the
+   shared wrapper rather than on .top-nav itself, so that when the banner
+   precedes it, sibling margin collapsing doesn't pull the negative top
+   margin up through the banner and squash it. */
+.chrome-top {
+  margin: -24px calc(50% - 50vw) 28px;
+}
+
+.announcement-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 44px;
+  background: linear-gradient(100deg, #ff7a1a 0%, #ffb238 50%, #ff8c2e 100%);
+  color: #1a1200;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.announcement-banner button {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: #1a1200;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.announcement-banner button:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.top-nav {
+  position: relative;
+  background: var(--brand-navy);
+  border-bottom: 1px solid var(--border);
+  padding: 22px 0 18px;
+}
+
+/* The logo sits near the true viewport edge (independent of the content
+   column), absolutely positioned so it doesn't affect the nav links/avatar
+   below, which stay aligned to the same centred 1000px column the rest of
+   the page's content uses. */
+.top-nav .brand {
+  position: absolute;
+  left: 120px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sans);
+  font-weight: 600;
+  color: var(--brand-navy-text);
+  text-decoration: none;
+  font-size: 1.75rem;
+  letter-spacing: -0.01em;
+}
+
+.top-nav-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 20px;
+}
+
+.top-nav nav {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.nav-link {
+  color: rgba(0, 0, 0, 0.75);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.nav-link:hover {
+  color: var(--brand-navy-text);
+}
+
+.nav-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.nav-avatar:hover {
+  opacity: 0.85;
+}
+
+.top-nav button {
+  background: transparent;
+  border-color: rgba(0, 0, 0, 0.25);
+  color: var(--brand-navy-text);
+}
+
+.top-nav button:hover {
+  border-color: var(--accent);
+}
+
+button, .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text);
+  padding: 9px 16px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+button:hover, .btn:hover {
+  border-color: var(--accent-border);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary, .btn.primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--ink-text);
+  font-weight: 600;
+}
+
+button.link {
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  color: var(--accent);
+}
+
+/* Bold rounded pill button — sits on the navy hero band, so it uses the cyan
+   accent for contrast (mirrors proposify.com's own "Book a demo" cyan pill
+   against their dark hero) rather than --ink, which would nearly disappear
+   against a navy background. */
+.pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 13px 30px;
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.pill-btn:hover {
+  opacity: 0.88;
+}
+
+.pill-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.field .hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+input, textarea, select {
+  font: inherit;
+  padding: 9px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text);
+  width: 100%;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: 2px solid var(--accent-border);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 70px;
+  font-family: var(--sans);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  background: var(--bg-surface);
+}
+
+.banner {
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  border: 1px solid var(--border);
+}
+
+.banner.warning {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+  color: var(--warning);
+}
+
+.banner.danger {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+.banner.success {
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th, td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+tr:hover td {
+  background: var(--bg-raised);
+}
+
+.status-pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.status-pill.draft { color: var(--text-muted); }
+.status-pill.sent { color: var(--success); border-color: var(--success); }
+.status-pill.approved { color: var(--success); border-color: var(--success); }
+.status-pill.rejected { color: var(--danger); border-color: var(--danger-border); }
+
+.missing-marker {
+  display: block;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--warning-bg);
+  border: 1px dashed var(--warning-border);
+  color: var(--warning);
+  font-style: italic;
+  font-size: 0.92em;
+}
+
+.section-block {
+  margin-bottom: 22px;
+}
+
+.section-block h3 {
+  text-transform: capitalize;
+}
+
+.section-body {
+  white-space: pre-wrap;
+}
+
+.empty-state {
+  color: var(--text-muted);
+  padding: 40px 0;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Hero-style creation screen (/new) */
+/* ---------------------------------------------------------------------- */
+
+/* Full-bleed navy band — see the comment on .top-nav for why calc(50% - 50vw)
+   is used instead of a plain negative margin. Continuous with .top-nav above
+   it, so the whole /new hero reads as one dark section. */
+.hero-shell {
+  background: var(--brand-navy);
+  margin: -28px calc(50% - 50vw) 0;
+  padding: 48px 0 64px;
+}
+
+.hero-inner {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ff6a37;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  font-size: 0.95rem;
+  margin-bottom: 18px;
+}
+
+.hero-title {
+  font-family: var(--sans);
+  font-weight: 500;
+  font-style: normal;
+  font-size: 52px;
+  line-height: 62px;
+  color: #000000;
+  letter-spacing: -0.03em;
+  margin: 0 0 16px;
+}
+
+@media (max-width: 640px) {
+  .hero-title {
+    font-size: 2.2rem;
+    line-height: 1.15;
+  }
+}
+
+.hero-subtitle {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  max-width: 780px;
+  margin: 0 auto 36px;
+}
+
+.hero-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 22px;
+  text-align: left;
+}
+
+/* A single chat-style composer replacing the old upload buttons + mad-lib —
+   type a description, attach files/photos, hit send; extraction runs on
+   whatever combination you gave it before landing on the field-review step. */
+.composer {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 20px 22px 14px;
+  text-align: left;
+}
+
+.composer-input {
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  resize: none;
+  font: inherit;
+  font-size: 1.02rem;
+  color: var(--text-h);
+  min-height: 64px;
+}
+
+.composer-input:focus {
+  outline: none;
+}
+
+.composer-input::placeholder {
+  color: var(--text-muted);
+}
+
+.composer-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 6px 5px 12px;
+  font-size: 0.82rem;
+  color: var(--text);
+  max-width: 220px;
+}
+
+.attachment-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.attachment-chip button:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.composer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.composer-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text);
+}
+
+.composer-icon-btn:hover:not(:disabled) {
+  border-color: var(--accent-border);
+}
+
+.composer-icon-btn.recording {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #ffffff;
+  animation: mic-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--danger-bg); }
+  50% { box-shadow: 0 0 0 6px var(--danger-bg); }
+}
+
+.composer-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: var(--ink);
+  color: var(--ink-text);
+}
+
+.composer-send:disabled {
+  opacity: 0.4;
+}
+
+.manual-fill-hint {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 12px 0 0;
+}
+
+.manual-fill-hint .link {
+  font-size: 0.82rem;
+}
+
+.spinner-icon {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.upload-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 640px) {
+  .upload-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.upload-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg-raised);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-h);
+  text-align: left;
+}
+
+.upload-option:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.upload-option .icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.madlib {
+  font-size: 1.08rem;
+  line-height: 2.1;
+  color: var(--text-h);
+}
+
+.madlib .blank-wrap {
+  position: relative;
+  display: inline-block;
+  vertical-align: -5px;
+  margin: 2px 1px;
+}
+
+/* Plain text with a highlight behind it — not a bordered input-looking box.
+   No border, tight padding, and font/line-height inherited from the
+   surrounding sentence so it reads as part of the same paragraph. */
+/* Fixed size regardless of content — does not grow when populated. Width
+   comes from the widthCh prop (inline style); height is fixed here at
+   roughly 2 lines. Longer content scrolls inside the box (overflow-y:
+   auto) rather than expanding it or being lost. */
+.madlib textarea {
+  display: inline-block;
+  max-width: 100%;
+  height: 1.4em;
+  min-height: 0;
+  resize: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: pre;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: none;
+  background: var(--blank-bg);
+  color: var(--text-h);
+  font: inherit;
+  font-size: inherit;
+  line-height: 1.4;
+  vertical-align: baseline;
+}
+
+.madlib textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.madlib textarea:focus {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 1px;
+  background: var(--blank-bg);
+}
+
+.more-fields-toggle {
+  margin: 22px 0 4px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.hero-generate {
+  margin-top: 28px;
+  text-align: center;
+}
+
+/* Use-cases showcase — a literal recreation of a reference design (browser-
+   chrome mockups over a painterly background), so it deliberately breaks
+   from the site's monochrome palette here, the same way other one-off
+   reference-matched sections in this file do. */
+.usecases {
+  margin-top: 88px;
+  text-align: left;
+}
+
+.usecases-title {
+  font-family: var(--sans);
+  font-weight: 500;
+  font-style: normal;
+  font-size: 52px;
+  line-height: 62px;
+  letter-spacing: -0.03em;
+  text-align: center;
+  color: #000000;
+  margin: 0 0 40px;
+}
+
+@media (max-width: 640px) {
+  .usecases-title {
+    font-size: 2.2rem;
+    line-height: 1.15;
+  }
+}
+
+.usecases-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+@media (max-width: 760px) {
+  .usecases-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.usecase-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 14px;
+  transition: transform 0.15s ease;
+}
+
+.usecase-card:hover {
+  transform: translateY(-3px);
+}
+
+.usecase-card:hover .usecase-frame {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08), 0 20px 40px rgba(0, 0, 0, 0.16);
+}
+
+.usecase-frame {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.15s ease;
+}
+
+.usecase-frame-retail {
+  background: linear-gradient(135deg, #8ec5e8 0%, #d9c9a8 45%, #5b8fc7 100%);
+}
+
+.usecase-frame-hotel {
+  background: linear-gradient(135deg, #e8b98e 0%, #f0dcc0 45%, #c76b5b 100%);
+}
+
+.frame-dots {
+  display: flex;
+  gap: 6px;
+  padding: 12px 14px 8px;
+}
+
+.frame-dots span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.frame-dots span:first-child {
+  background: #e0605a;
+}
+
+.frame-dots span:nth-child(2) {
+  background: #e0b04a;
+}
+
+.frame-dots span:nth-child(3) {
+  background: #5aa869;
+}
+
+.frame-doc {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 40px;
+  bottom: 20px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 18px 20px;
+}
+
+.frame-doc-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #111111;
+  margin-bottom: 10px;
+}
+
+.frame-doc-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: #6b6b6b;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.frame-doc-line {
+  height: 7px;
+  border-radius: 4px;
+  background: #ececec;
+  margin-bottom: 9px;
+}
+
+.frame-doc-line.short {
+  width: 60%;
+}
+
+.usecase-card h3 {
+  font-size: 1.15rem;
+  margin: 0 0 10px;
+}
+
+.usecase-card p {
+  color: var(--text-muted);
+  font-size: 0.94rem;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.howitworks {
+  margin-top: 88px;
+}
+
+.howitworks-title {
+  font-family: var(--sans);
+  font-weight: 500;
+  font-style: normal;
+  font-size: 52px;
+  line-height: 62px;
+  letter-spacing: -0.03em;
+  text-align: center;
+  color: #000000;
+  margin: 0 0 40px;
+}
+
+@media (max-width: 640px) {
+  .howitworks-title {
+    font-size: 2.2rem;
+    line-height: 1.15;
+  }
+}
+
+.howitworks-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 760px) {
+  .howitworks-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.howitworks-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 26px;
+}
+
+.howitworks-num {
+  color: #ff6a37;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+}
+
+.howitworks-card h3 {
+  font-family: var(--sans);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-size: 1.6rem;
+  line-height: 1.25;
+  margin: 0 0 12px;
+}
+
+.howitworks-card p {
+  color: var(--text-muted);
+  font-size: 0.94rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.closing-cta {
+  margin-top: 100px;
+  text-align: center;
+}
+
+.closing-cta h2 {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #000000;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .closing-cta h2 {
+    font-size: 2.4rem;
+  }
+}
+
+.site-footer {
+  margin-top: 90px;
+  border-top: 1px solid var(--border);
+  padding-top: 28px;
+}
+
+.site-footer-inner {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.site-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.site-footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+.site-footer-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.site-footer-links a:hover {
+  color: var(--text);
+}
+
+.site-footer-copyright {
+  max-width: 1060px;
+  margin: 20px auto 0;
+  padding: 0 20px 28px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+/* Short-lived notification — replaces a persistent inline banner for things
+   the user needs to notice once, not keep staring at. */
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--ink-text);
+  padding: 12px 20px;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  font-size: 0.88rem;
+  max-width: 90vw;
+  z-index: 100;
+  animation: toast-in 0.18s ease-out;
+}
+
+/* /generating/:id — step checklist that ticks off as generation proceeds. */
+.generating-steps {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.generating-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  transition: color 0.15s ease;
+}
+
+.generating-steps li.done {
+  color: var(--text);
+}
+
+.generating-steps .step-mark {
+  flex-shrink: 0;
+  width: 18px;
+  color: var(--text-muted);
+}
+
+.generating-steps li.done .step-mark {
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* Compact — this is a transitional confirmation right before auto-navigating
+   away, not a destination in its own right. */
+.generating-complete {
+  font-size: 0.9rem;
+  color: var(--success);
+  background: var(--success-bg);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0;
+}
+
+/* Document front matter — title + To/From/Date/commitment summary, at the
+   top of every generated proposal (review screen, public page, PDF). */
+.doc-header {
+  border-bottom: 2px solid var(--text-h);
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+}
+
+.doc-header-title {
+  font-size: 1.4rem;
+  margin: 0 0 16px;
+}
+
+.doc-header-meta {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 32px;
+  margin: 0;
+}
+
+.doc-header-meta > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px dotted var(--border);
+  padding-bottom: 4px;
+}
+
+.doc-header-meta dt {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.doc-header-meta dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.doc-header-meta .missing-marker {
+  display: inline;
+  margin: 0;
+  padding: 1px 8px;
+  font-weight: 400;
+}
+
+@media (max-width: 560px) {
+  .doc-header-meta {
+    grid-template-columns: 1fr;
+  }
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+}
+
+.copied-tooltip {
+  position: absolute;
+  top: -30px;
+  right: 0;
+  background: var(--ink);
+  color: var(--ink-text);
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.approved-stamp {
+  display: inline-block;
+  border: 3px solid var(--success);
+  color: var(--success);
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 16px;
+  border-radius: 6px;
+  transform: rotate(-3deg);
+  margin: 12px 0 16px;
+}
+
+/* An actual two-message chat thread: your intake prompt as one message,
+   Proposally's reply (avatar + narration + activity ticks + result) as the
+   next — full width, single column, stacked top to bottom like a real
+   LLM chat rather than a persistent side panel. */
+.chat-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+/* Real chat bubbles don't stretch full width — a user's message hugs the
+   right edge, the reply hugs the left, each capped well short of the full
+   container so the eye reads them as discrete messages, not full-bleed
+   panels. */
+.chat-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.chat-msg-user {
+  justify-content: flex-end;
+}
+
+.chat-msg-assistant {
+  justify-content: flex-start;
+}
+
+.chat-avatar {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  padding: 4px;
+  object-fit: contain;
+}
+
+.chat-msg-body {
+  max-width: 74%;
+  min-width: 0;
+}
+
+.chat-sender-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.chat-bubble {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.chat-msg-user .chat-bubble {
+  max-width: 74%;
+  background: var(--bg-raised);
+}
+
+.chat-msg-assistant .chat-bubble {
+  background: var(--bg-surface);
+}
+
+/* Only applied when the intro is actually playing for the first time (fresh
+   generation, or a Use Cases card replay) — never on a plain reopen. */
+.chat-bubble.fade-in {
+  animation: chat-fade-in 0.5s ease;
+}
+
+@keyframes chat-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .chat-msg-body,
+  .chat-msg-user .chat-bubble {
+    max-width: 100%;
+  }
+}
+
+/* The "artifact preview" window — a self-contained, rounded card, separate
+   from the chat bubble above it (its own border, not nested inside the
+   bubble's), with a small header (doc icon + title, download/share icons at
+   top right) and shrunk-down body text. Renders straight into preview mode
+   — capped height, fade-out at the bottom — the moment the document is
+   ready, no extra "click to view" step first. Clicking the icon+title area
+   toggles the full (uncapped, editable) document; the fade and height cap
+   simply aren't present once full. */
+.doc-window {
+  max-width: 600px;
+  margin-top: 22px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-surface);
+  animation: result-expand 0.15s ease;
+}
+
+.doc-window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 10px 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.doc-window-header-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  color: var(--text);
+}
+
+.doc-window-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.menu-wrap {
+  position: relative;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 190px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  z-index: 20;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover:not(:disabled) {
+  background: var(--bg-raised);
+}
+
+.menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.format-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 20px;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.doc-window-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-window-body {
+  padding: 18px;
+  font-size: 0.85rem;
+}
+
+.doc-window-preview .doc-window-body {
+  max-height: 520px;
+  overflow: hidden;
+  position: relative;
+}
+
+.doc-window-fade {
+  height: 90px;
+  margin-top: -90px;
+  position: relative;
+  background: linear-gradient(to bottom, transparent, var(--bg-surface));
+  pointer-events: none;
+}
+
+.doc-window-preview {
+  cursor: pointer;
+}
+
+.doc-window-preview:hover {
+  border-color: var(--accent-border);
+}
+
+/* Clicking the small preview card opens the document full-screen, like a
+   lightbox — the card itself stays put in the chat thread as a permanent
+   "here's what was sent" marker. */
+.doc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  z-index: 100;
+}
+
+.doc-modal {
+  width: 100%;
+  max-width: 1140px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow);
+}
+
+.doc-modal .doc-window-header {
+  flex-shrink: 0;
+}
+
+.doc-modal-body {
+  overflow-y: auto;
+  padding: 26px 32px;
+}
+
+@keyframes result-expand {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
