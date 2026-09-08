@@ -20,43 +20,45 @@ export function Login() {
   }
 
   return (
-    <div className="app-shell" style={{ maxWidth: 380, paddingTop: '15vh' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-        <img src="/favicon.png" alt="" width={40} height={40} />
-        <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 600 }}>Proposally</h1>
+    <div className="login-page">
+      <div className="login-card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+          <img src="/favicon.png" alt="" width={40} height={40} />
+          <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 600 }}>Proposally</h1>
+        </div>
+        <p className="muted" style={{ color: 'var(--text-muted)', marginBottom: 24 }}>
+          Sign in to continue.
+        </p>
+        <form onSubmit={handleSubmit}>
+          <div className="field">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="username"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          {error && <div className="banner danger">{error}</div>}
+          <button type="submit" className="primary" disabled={submitting}>
+            {submitting ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+        {/* No sign-up affordance: sign-ups are disabled server-side, staff are provisioned by hand. */}
       </div>
-      <p className="muted" style={{ color: 'var(--text-muted)', marginBottom: 24 }}>
-        Sign in to continue.
-      </p>
-      <form onSubmit={handleSubmit}>
-        <div className="field">
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="username"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        {error && <div className="banner danger">{error}</div>}
-        <button type="submit" className="primary" disabled={submitting}>
-          {submitting ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-      {/* No sign-up affordance: sign-ups are disabled server-side, staff are provisioned by hand. */}
     </div>
   )
 }

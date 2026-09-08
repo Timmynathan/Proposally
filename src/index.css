@@ -121,6 +121,27 @@ code {
   min-height: 100svh;
 }
 
+.login-page {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(255, 106, 55, 0.25), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(255, 140, 46, 0.18), transparent 50%),
+    #0b0b0b;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 36px 32px 32px;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+}
+
 /* Persistent dark navy header — proposify.com keeps this band dark the whole
    page down, not just in the hero, so it stays put across every screen here
    rather than switching to a light nav on non-hero pages. */
