@@ -84,7 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rawText = await callClaude({
       apiKey: env.anthropicKey,
       model: REGENERATION_MODEL,
-      maxTokens: 1000,
+      maxTokens: 2000,
       system: buildSystemPrompt(sectionKey, missing, steerText),
       user: buildFieldsBlock(proposal),
       label: 'regenerate',

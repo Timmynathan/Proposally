@@ -175,7 +175,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rawText = await callClaude({
       apiKey: anthropicKey,
       model: EXTRACTION_MODEL,
-      maxTokens: 2000,
+      maxTokens: 4000,
       system: buildSystemPrompt(),
       user: userContent,
       label: 'extract',

@@ -72,7 +72,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rawText = await callClaude({
       apiKey: env.anthropicKey,
       model: GENERATION_MODEL,
-      maxTokens: 3000,
+      // Sonnet can spend a chunk of this budget on internal reasoning before
+      // writing the six sections themselves — 3000 was tight enough that a
+      // real generation call hit max_tokens with zero text output. Sized well
+      // above the actual six-section prose length to leave headroom for that.
+      maxTokens: 8000,
       system: buildGenerationSystemPrompt(missing),
       user: buildFieldsBlock(proposal),
       label: 'generate',

@@ -262,7 +262,7 @@ export async function callClaude(params: {
   const rawBody = await res.text()
   console.log(`[${params.label}] raw body length=${rawBody.length}`)
 
-  let data: { content?: { type?: string; text?: string }[] }
+  let data: { content?: { type?: string; text?: string }[]; stop_reason?: string }
   try {
     data = JSON.parse(rawBody)
   } catch {
@@ -273,8 +273,18 @@ export async function callClaude(params: {
   const textBlock = data.content?.find((block) => block.type === 'text')
   const rawText = textBlock?.text ?? ''
   if (!rawText) {
-    console.error(`[${params.label}] No text block in Anthropic response`)
-    throw new Error('No text content in Anthropic response')
+    // The model can spend its whole max_tokens budget on an internal
+    // "thinking" block before ever reaching a text block, especially on the
+    // longer generation prompt — that shows up here as stop_reason
+    // "max_tokens" with no text content at all. Naming that case in the
+    // message points straight at "raise maxTokens" instead of a wild-goose
+    // chase through auth/network failures next time this happens.
+    console.error(`[${params.label}] No text block in Anthropic response, stop_reason=${data.stop_reason}`)
+    throw new Error(
+      data.stop_reason === 'max_tokens'
+        ? 'Anthropic response had no text content — max_tokens was reached before any text was produced (likely spent on internal reasoning)'
+        : 'No text content in Anthropic response',
+    )
   }
   return rawText
 }
