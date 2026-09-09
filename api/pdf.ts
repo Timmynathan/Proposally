@@ -87,7 +87,7 @@ function buildPdfDocument(proposal: ProposalRecord, sections: SectionForPdf[]) {
         View,
         { style: styles.metaBlock },
         metaRow('To', proposal.client_name?.trim() || '—'),
-        metaRow('From', proposal.salesperson_name?.trim() ? `${proposal.salesperson_name}, Proposally` : 'Proposally'),
+        metaRow('From', proposal.salesperson_name?.trim() ? `${proposal.salesperson_name}, Koya` : 'Koya'),
         metaRow('Date', proposal.sent_at ? new Date(proposal.sent_at).toLocaleDateString() : 'Draft'),
         metaRow('Estimated Pricing', proposal.estimated_pricing?.trim() ? headerSummary(proposal.estimated_pricing) : '[ Pricing not provided — to be confirmed ]'),
         metaRow('Proposed Timeline', proposal.proposed_timeline?.trim() ? headerSummary(proposal.proposed_timeline) : '[ Timeline not provided — to be confirmed ]'),
@@ -109,7 +109,7 @@ function buildPdfDocument(proposal: ProposalRecord, sections: SectionForPdf[]) {
       React.createElement(
         Text,
         { style: styles.signoff },
-        `Warm regards,\n${proposal.salesperson_name ?? ''}\nProposally`,
+        `Warm regards,\n${proposal.salesperson_name ?? ''}\nKoya`,
       ),
     ),
   )

@@ -9,7 +9,7 @@ export const config = {
 // Resend only delivers to the account owner's own verified address — sending to
 // an arbitrary client_email will need a verified sending domain in Resend.
 // Overridable so a verified domain can be swapped in without a code change.
-const DEFAULT_FROM = 'Proposally <onboarding@resend.dev>'
+const DEFAULT_FROM = 'Koya <onboarding@resend.dev>'
 
 function buildEmail(params: { clientName: string; companyName: string; salesperson: string; proposalLink: string }): {
   subject: string
@@ -34,7 +34,7 @@ Best regards,
 
 ${salesperson}
 
-Proposally`,
+Koya`,
   }
 }
 
@@ -100,7 +100,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const email = buildEmail({
     clientName: proposal.client_name ?? 'there',
     companyName: proposal.company_name ?? 'your company',
-    salesperson: proposal.salesperson_name ?? 'Proposally',
+    salesperson: proposal.salesperson_name ?? 'Koya',
     proposalLink,
   })
 

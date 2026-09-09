@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { SectionContent } from '../lib/SectionContent'
 import { DocumentHeader } from '../lib/DocumentHeader'
+import { DownloadMenu } from '../lib/DownloadMenu'
 import { SECTION_KEYS, type ProposalRow, type ProposalSectionRow } from '../lib/types'
 
 const SECTION_TITLES: Record<string, string> = {
@@ -24,7 +25,7 @@ export function PublicProposal() {
   const [sections, setSections] = useState<ProposalSectionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!token) return
@@ -45,73 +46,84 @@ export function PublicProposal() {
       })
   }, [token])
 
-  async function handleDownload() {
-    if (!token) return
-    setDownloading(true)
-    try {
-      const res = await fetch(`/api/pdf?token=${token}`)
-      if (!res.ok) return
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `proposal-${proposal?.company_name?.replace(/\s+/g, '-').toLowerCase() || 'koya'}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      URL.revokeObjectURL(url)
-    } finally {
-      setDownloading(false)
-    }
+  async function fetchPdfBlob(): Promise<Blob> {
+    const res = await fetch(`/api/pdf?token=${token}`)
+    if (!res.ok) throw new Error('PDF request failed')
+    return res.blob()
   }
 
   if (loading) {
-    return <div className="app-shell" style={{ maxWidth: 720 }} />
+    return <div className="public-page" />
   }
 
   if (notFound || !proposal) {
     return (
-      <div className="app-shell" style={{ maxWidth: 720, paddingTop: '10vh', textAlign: 'center' }}>
-        <h1>This proposal isn't available</h1>
-        <p style={{ color: 'var(--text-muted)' }}>
-          The link may be incorrect, or the proposal hasn't been sent yet.
-        </p>
+      <div className="public-page">
+        <div style={{ textAlign: 'center', paddingTop: '10vh' }}>
+          <h1>This proposal isn't available</h1>
+          <p style={{ color: 'var(--text-muted)' }}>
+            The link may be incorrect, or the proposal hasn't been sent yet.
+          </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="app-shell" style={{ maxWidth: 720 }}>
-      <DocumentHeader
-        companyName={proposal.company_name}
-        clientName={proposal.client_name}
-        salespersonName={proposal.salesperson_name}
-        sentAt={proposal.sent_at}
-        estimatedPricing={proposal.estimated_pricing}
-        proposedTimeline={proposal.proposed_timeline}
-      />
-
-      <button onClick={handleDownload} disabled={downloading} style={{ marginBottom: 28 }}>
-        {downloading ? 'Preparing PDF…' : 'Download as PDF'}
-      </button>
-
-      {SECTION_KEYS.map((key) => {
-        const section = sections.find((s) => s.key === key)
-        return (
-          <div className="section-block" key={key}>
-            <h3>{SECTION_TITLES[key]}</h3>
-            <SectionContent content={section?.content} />
+    <div className="public-page">
+      <div className="public-doc">
+        <div className="doc-window-header">
+          <div className="doc-window-header-main">
+            <DocIcon />
+            <span className="doc-window-title">Proposal: {proposal.company_name || 'Untitled'}</span>
           </div>
-        )
-      })}
+          <div className="doc-window-header-actions">
+            <DownloadMenu proposal={proposal} sections={sections} fetchPdfBlob={fetchPdfBlob} onError={setDownloadError} />
+          </div>
+        </div>
 
-      <p style={{ marginTop: 40, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-        Warm regards,
-        <br />
-        {proposal.salesperson_name}
-        <br />
-        Proposally
-      </p>
+        <div className="public-doc-body">
+          {downloadError && <div className="banner danger" style={{ marginBottom: 20 }}>{downloadError}</div>}
+
+          <DocumentHeader
+            companyName={proposal.company_name}
+            clientName={proposal.client_name}
+            salespersonName={proposal.salesperson_name}
+            sentAt={proposal.sent_at}
+            estimatedPricing={proposal.estimated_pricing}
+            proposedTimeline={proposal.proposed_timeline}
+          />
+
+          {SECTION_KEYS.map((key) => {
+            const section = sections.find((s) => s.key === key)
+            return (
+              <div className="section-block card" key={key}>
+                <h3>{SECTION_TITLES[key]}</h3>
+                <SectionContent content={section?.content} />
+              </div>
+            )
+          })}
+
+          <p className="public-doc-signoff">
+            Warm regards,
+            <br />
+            {proposal.salesperson_name}
+            <br />
+            Koya
+          </p>
+        </div>
+      </div>
     </div>
+  )
+}
+
+function DocIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M9 13h6" />
+      <path d="M9 17h6" />
+    </svg>
   )
 }

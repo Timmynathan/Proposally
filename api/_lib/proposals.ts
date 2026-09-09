@@ -150,7 +150,7 @@ export function buildVerbatimRulesText(missing: RequiredField[]): string {
       : ' All required fields were supplied for this proposal.'
   }
 
-3. NO COMPANY CLAIMS. Do not claim any experience, client roster, certifications, awards, or past results for Proposally. None of that is supplied to you, so none of it may appear.
+3. NO COMPANY CLAIMS. Do not claim any experience, client roster, certifications, awards, or past results for Koya. None of that is supplied to you, so none of it may appear.
 
 4. TONE. Professional and warm, not effusive. No superlatives — avoid words like "cutting-edge", "revolutionary", "world-class", "game-changing".
 
@@ -205,7 +205,7 @@ export function missingRequiredFields(p: ProposalRecord): RequiredField[] {
 // prompt before the real call runs, rather than a second hand-written copy
 // that could quietly drift out of sync with what's actually sent.
 export function buildGenerationSystemPrompt(missing: RequiredField[]): string {
-  return `You write prose for client-facing sales proposals on behalf of Proposally. You are given facts collected on a discovery call. Follow these rules exactly — they are not stylistic preferences:
+  return `You write prose for client-facing sales proposals on behalf of Koya. You are given facts collected on a discovery call. Follow these rules exactly — they are not stylistic preferences:
 
 ${buildVerbatimRulesText(missing)}
 

@@ -6,7 +6,7 @@ import { SectionContent } from '../lib/SectionContent'
 import { DocumentHeader } from '../lib/DocumentHeader'
 import { buildFullPrompt, buildNarration } from '../lib/promptSummary'
 import { Typewriter } from '../lib/Typewriter'
-import { buildMarkdown, buildDocxBlob, triggerBlobDownload } from '../lib/exportDoc'
+import { DownloadMenu } from '../lib/DownloadMenu'
 import {
   SECTION_KEYS,
   type ProposalRow,
@@ -79,14 +79,11 @@ export function ProposalView() {
   const [introPhase, setIntroPhase] = useState<IntroPhase>(animateIntro ? 'fade' : 'ready')
   const [introCheckStep, setIntroCheckStep] = useState(animateIntro ? 0 : GENERATING_STEPS.length)
 
-  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
-  const downloadMenuRef = useRef<HTMLDivElement>(null)
   const moreMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function onDocMouseDown(e: MouseEvent) {
-      if (downloadMenuRef.current && !downloadMenuRef.current.contains(e.target as Node)) setDownloadMenuOpen(false)
       if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) setMoreMenuOpen(false)
     }
     document.addEventListener('mousedown', onDocMouseDown)
@@ -286,48 +283,14 @@ export function ProposalView() {
     }
   }
 
-  function downloadFilenameBase() {
-    return proposal?.company_name?.trim().replace(/\s+/g, '-').toLowerCase() || id
-  }
-
-  async function handleDownloadPdf() {
-    if (!id) return
-    setBusy('pdf')
-    setError(null)
-    try {
-      const res = await fetch(`/api/pdf?id=${id}`, { headers: { Authorization: await authHeader() } })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({ error: `PDF failed (${res.status})` }))
-        setError(body.error ?? `PDF failed (${res.status})`)
-        return
-      }
-      const blob = await res.blob()
-      triggerBlobDownload(blob, `proposal-${downloadFilenameBase()}.pdf`)
-      await load()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'PDF request failed')
-    } finally {
-      setBusy(null)
+  async function fetchPdfBlob(): Promise<Blob> {
+    if (!id) throw new Error('Missing proposal id')
+    const res = await fetch(`/api/pdf?id=${id}`, { headers: { Authorization: await authHeader() } })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: `PDF failed (${res.status})` }))
+      throw new Error(body.error ?? `PDF failed (${res.status})`)
     }
-  }
-
-  function handleDownloadMarkdown() {
-    if (!proposal) return
-    const md = buildMarkdown(proposal, sections)
-    triggerBlobDownload(new Blob([md], { type: 'text/markdown' }), `proposal-${downloadFilenameBase()}.md`)
-  }
-
-  async function handleDownloadDocx() {
-    if (!proposal) return
-    setBusy('docx')
-    try {
-      const blob = await buildDocxBlob(proposal, sections)
-      triggerBlobDownload(blob, `proposal-${downloadFilenameBase()}.docx`)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'DOCX generation failed')
-    } finally {
-      setBusy(null)
-    }
+    return res.blob()
   }
 
   async function handleCopyLink() {
@@ -349,12 +312,13 @@ export function ProposalView() {
 
   const hasSections = sections.length > 0
   const latestApproval = approvals[0]
-  const actionsDisabled = generatingLive || busy === 'pdf'
+  const actionsDisabled = generatingLive
   // Narrowed alias — TS's control-flow narrowing from the `if (!proposal)
   // return` above doesn't carry into nested function declarations below
   // (docHeaderActions), so `proposal.status` there would still type as
   // possibly-null without this.
   const proposalStatus = proposal.status
+  const narrowedProposal = proposal
 
   // Shared between the small capped preview card and the full-screen modal —
   // same document, two different frames around it, so this is computed once
@@ -475,52 +439,14 @@ export function ProposalView() {
   function docHeaderActions(extra?: ReactNode) {
     return (
       <div className="doc-window-header-actions" onClick={(e) => e.stopPropagation()}>
-        <div className="menu-wrap" ref={downloadMenuRef}>
-          <button
-            className="icon-btn"
-            onClick={() => setDownloadMenuOpen((v) => !v)}
-            disabled={actionsDisabled}
-            title="Download"
-          >
-            <DownloadIcon />
-          </button>
-          {downloadMenuOpen && (
-            <div className="menu-dropdown">
-              <button
-                className="menu-item"
-                onClick={() => {
-                  handleDownloadMarkdown()
-                  setDownloadMenuOpen(false)
-                }}
-              >
-                <FormatBadge label="MD" color="#4b5563" />
-                Markdown
-              </button>
-              <button
-                className="menu-item"
-                disabled={busy === 'docx'}
-                onClick={() => {
-                  void handleDownloadDocx()
-                  setDownloadMenuOpen(false)
-                }}
-              >
-                <FormatBadge label="DOCX" color="#2b579a" />
-                {busy === 'docx' ? 'Preparing…' : 'Word (.docx)'}
-              </button>
-              <button
-                className="menu-item"
-                disabled={busy === 'pdf'}
-                onClick={() => {
-                  void handleDownloadPdf()
-                  setDownloadMenuOpen(false)
-                }}
-              >
-                <FormatBadge label="PDF" color="#b3261e" />
-                {busy === 'pdf' ? 'Preparing…' : 'PDF'}
-              </button>
-            </div>
-          )}
-        </div>
+        <DownloadMenu
+          proposal={narrowedProposal}
+          sections={sections}
+          fetchPdfBlob={fetchPdfBlob}
+          disabled={actionsDisabled}
+          onError={setError}
+          onPdfDownloaded={load}
+        />
 
         <div className="menu-wrap" ref={moreMenuRef}>
           <button className="icon-btn" onClick={() => setMoreMenuOpen((v) => !v)} disabled={actionsDisabled} title="More">
@@ -666,16 +592,6 @@ export function ProposalView() {
   )
 }
 
-function DownloadIcon() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 3v12" />
-      <path d="M7 10l5 5 5-5" />
-      <path d="M4 19h16" />
-    </svg>
-  )
-}
-
 function MoreIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -692,14 +608,6 @@ function LinkIcon() {
       <path d="M10 13a5 5 0 0 0 7.07 0l2-2a5 5 0 0 0-7.07-7.07l-1 1" />
       <path d="M14 11a5 5 0 0 0-7.07 0l-2 2a5 5 0 0 0 7.07 7.07l1-1" />
     </svg>
-  )
-}
-
-function FormatBadge({ label, color }: { label: string; color: string }) {
-  return (
-    <span className="format-badge" style={{ background: color }}>
-      {label}
-    </span>
   )
 }
 

@@ -28,7 +28,7 @@ function isSectionKey(v: unknown): v is SectionKey {
 }
 
 function buildSystemPrompt(sectionKey: SectionKey, missing: ReturnType<typeof missingRequiredFields>, steer: string): string {
-  return `You write prose for client-facing sales proposals on behalf of Proposally. You are regenerating ONE section of an existing proposal — "${sectionKey}" — not the whole document. Follow these rules exactly — they are not stylistic preferences:
+  return `You write prose for client-facing sales proposals on behalf of Koya. You are regenerating ONE section of an existing proposal — "${sectionKey}" — not the whole document. Follow these rules exactly — they are not stylistic preferences:
 
 ${buildVerbatimRulesText(missing)}
 

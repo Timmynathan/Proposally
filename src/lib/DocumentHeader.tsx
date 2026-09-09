@@ -68,7 +68,7 @@ export function DocumentHeader({
         </div>
         <div>
           <dt>From</dt>
-          <dd>{salespersonName?.trim() ? `${salespersonName}, Proposally` : 'Proposally'}</dd>
+          <dd>{salespersonName?.trim() ? `${salespersonName}, Koya` : 'Koya'}</dd>
         </div>
         <div>
           <dt>Date</dt>

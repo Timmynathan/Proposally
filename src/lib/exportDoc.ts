@@ -4,8 +4,8 @@ import { SECTION_KEYS, type ProposalRow, type ProposalSectionRow } from './types
 function metaLines(proposal: ProposalRow): [string, string][] {
   return [
     ['To', proposal.client_name?.trim() || '—'],
-    ['From', `${proposal.salesperson_name?.trim() || 'Proposally'}, Proposally`],
-    ['Date', proposal.date_of_call?.trim() || '—'],
+    ['From', `${proposal.salesperson_name?.trim() || 'Koya'}, Koya`],
+    ['Date', proposal.sent_at ? new Date(proposal.sent_at).toLocaleDateString() : 'Draft'],
     ['Estimated Pricing', proposal.estimated_pricing?.trim() || 'Not provided — to be confirmed'],
     ['Proposed Timeline', proposal.proposed_timeline?.trim() || 'Not provided — to be confirmed'],
   ]

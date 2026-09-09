@@ -1521,3 +1521,61 @@ tr:hover td {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Client-facing /p/:token page — a standalone document, not a card inside a
+   chat thread, so it gets its own wider frame and generous section spacing
+   rather than reusing .doc-window's chat-embedded sizing (max-width: 600px). */
+.public-page {
+  min-height: 100svh;
+  background: var(--bg);
+  padding: 56px 20px 90px;
+  display: flex;
+  justify-content: center;
+}
+
+.public-doc {
+  width: 100%;
+  max-width: 760px;
+  height: fit-content;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-surface);
+  box-shadow: 0 24px 60px -36px rgba(0, 0, 0, 0.3);
+}
+
+.public-doc-body {
+  padding: 40px 44px 48px;
+  font-size: 0.95rem;
+}
+
+.public-doc-body .doc-header {
+  margin-bottom: 36px;
+}
+
+.public-doc-body .section-block {
+  margin-bottom: 32px;
+  padding: 22px 24px;
+}
+
+.public-doc-body .section-block:last-of-type {
+  margin-bottom: 0;
+}
+
+.public-doc-body .section-block h3 {
+  font-size: 1.05rem;
+  margin-bottom: 10px;
+}
+
+.public-doc-signoff {
+  margin-top: 44px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .public-doc-body {
+    padding: 28px 22px 36px;
+  }
+}
