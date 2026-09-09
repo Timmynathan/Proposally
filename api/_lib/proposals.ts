@@ -134,7 +134,16 @@ export function markerFor(field: RequiredField): string {
 export function stripCodeFence(text: string): string {
   const trimmed = text.trim()
   const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/)
-  return fenced ? fenced[1] : trimmed
+  const candidate = fenced ? fenced[1] : trimmed
+  // Belt-and-suspenders beyond the fence regex above: the model occasionally
+  // adds a stray leading/trailing word or an unclosed fence that the strict
+  // anchored match above misses entirely, leaving the ``` markers or prose
+  // in `candidate` and breaking JSON.parse. Slicing from the first `{` to
+  // the last `}` recovers the object regardless of what surrounds it.
+  const start = candidate.indexOf('{')
+  const end = candidate.lastIndexOf('}')
+  if (start === -1 || end === -1 || end < start) return candidate
+  return candidate.slice(start, end + 1)
 }
 
 // The rules block shared by both the full six-section prompt and the single-
