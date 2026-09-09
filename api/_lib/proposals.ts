@@ -334,8 +334,13 @@ export async function fetchProposal(
 // fail fast with one check instead of repeating the null-guard everywhere.
 export function requiredEnv() {
   const anthropicKey = process.env.ANTHROPIC_API_KEY
-  const supabaseUrl = process.env.VITE_SUPABASE_URL
-  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY
+  // SUPABASE_URL/SUPABASE_ANON_KEY are server-only copies of the VITE_-prefixed
+  // values the client bundle uses. On Vercel, VITE_-prefixed vars can be set as
+  // build-time-only "Config" values that never reach a function's process.env,
+  // so the server needs its own plain-named copies — the VITE_ fallback here is
+  // just for local dev, where a single .env only defines the VITE_ names.
+  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY
   if (!anthropicKey || !supabaseUrl || !supabaseAnonKey) {
     return null
   }

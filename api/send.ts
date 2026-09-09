@@ -46,7 +46,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const env = requiredEnv()
   const resendKey = process.env.RESEND_API_KEY
-  const publicBaseUrl = process.env.PUBLIC_BASE_URL
+  // Named BASE_URL (not PUBLIC_BASE_URL) so Vercel treats it as a normal
+  // server-only var — any PUBLIC_-prefixed name is forced into their
+  // client-exposed "Config" type, which isn't injected into a function's
+  // process.env at runtime (this is server-only; the client never reads it).
+  const publicBaseUrl = process.env.BASE_URL
   if (!env || !resendKey || !publicBaseUrl) {
     res.status(500).json({ ok: false, error: 'Server is missing required environment variables' })
     return
