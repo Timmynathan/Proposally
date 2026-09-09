@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 
 export function Login() {
   const { signIn } = useAuth()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -14,9 +16,13 @@ export function Login() {
     setError(null)
     const { error } = await signIn(email, password)
     setSubmitting(false)
-    if (error) setError(error)
-    // On success, AuthProvider's onAuthStateChange flips status to signed_in
-    // and the router (below) re-renders past this screen.
+    if (error) {
+      setError(error)
+      return
+    }
+    // Always land on the home page after sign-in, regardless of whatever
+    // URL happened to be in the address bar (e.g. a stale /account link).
+    navigate('/', { replace: true })
   }
 
   return (
