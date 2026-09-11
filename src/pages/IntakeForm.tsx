@@ -61,6 +61,49 @@ function computeMissingFields(intake: ProposalIntake): RequiredCommitmentField[]
   return REQUIRED_COMMITMENT_FIELDS.filter((key) => !intake[key]?.trim())
 }
 
+// All 8 fields marked required in the form below — the four commitments
+// plus the four contact/admin fields needed for the document to even make
+// sense (there's no "marker" story for a proposal addressed to no one).
+const REQUIRED_INTAKE_FIELDS: (keyof ProposalIntake)[] = [
+  'client_name',
+  'client_email',
+  'company_name',
+  'client_needs_summary',
+  'project_scope',
+  'recommended_services',
+  'proposed_timeline',
+  'estimated_pricing',
+]
+
+const REQUIRED_FIELD_LABELS: Record<string, string> = {
+  client_name: 'Client name',
+  client_email: 'Client email',
+  company_name: 'Company name',
+  client_needs_summary: "Summary of client's needs",
+  project_scope: 'Project scope',
+  recommended_services: 'Deliverables / services',
+  proposed_timeline: 'Timeline',
+  estimated_pricing: 'Budget',
+}
+
+// Deliberately simple — good enough to catch a typo or a blank field
+// pretending to be an email, not a full RFC 5322 validator.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Blocks generation outright rather than the old "warn but proceed" toast —
+// every field here must be filled, and the email must look like an email,
+// before a proposal (and its draft row) is created at all.
+function validateIntake(intake: ProposalIntake): string | null {
+  const missingLabels = REQUIRED_INTAKE_FIELDS.filter((key) => !intake[key]?.trim()).map((key) => REQUIRED_FIELD_LABELS[key])
+  if (missingLabels.length > 0) {
+    return `Please fill in the following before generating: ${missingLabels.join(', ')}.`
+  }
+  if (!EMAIL_PATTERN.test(intake.client_email.trim())) {
+    return 'Client email doesn\'t look like a valid email address.'
+  }
+  return null
+}
+
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -80,14 +123,6 @@ export function IntakeForm() {
   const [values, setValues] = useState<ProposalIntake>(EMPTY)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
-  const toastTimer = useRef<number | null>(null)
-
-  function showToast(message: string) {
-    setToast(message)
-    if (toastTimer.current) window.clearTimeout(toastTimer.current)
-    toastTimer.current = window.setTimeout(() => setToast(null), 4500)
-  }
 
   // Salesperson name means the Proposally staffer acting on our behalf, not
   // anyone at the client's company — so it's auto-filled from the logged-in
@@ -250,11 +285,10 @@ export function IntakeForm() {
   }
 
   async function handleGenerate() {
-    const missing_fields = computeMissingFields(values)
-    if (missing_fields.length > 0) {
-      showToast(
-        `${missing_fields.length} required field${missing_fields.length > 1 ? 's' : ''} left blank — the proposal will show a placeholder there instead of a guess.`,
-      )
+    const validationError = validateIntake(values)
+    if (validationError) {
+      setError(validationError)
+      return
     }
 
     setGenerating(true)
@@ -265,7 +299,10 @@ export function IntakeForm() {
       .insert({
         ...values,
         date_of_call: values.date_of_call || null,
-        missing_fields,
+        // Always empty at this point — every commitment field was just
+        // validated above — but computed rather than hardcoded so this
+        // stays correct if validateIntake's rules ever change.
+        missing_fields: computeMissingFields(values),
         status: 'draft',
         created_by: session?.user.id,
       })
@@ -605,8 +642,6 @@ export function IntakeForm() {
           <p className="site-footer-copyright">© 2026 Proposally. All rights reserved.</p>
         </footer>
       )}
-
-      {toast && <div className="toast">{toast}</div>}
     </div>
   )
 }
