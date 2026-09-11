@@ -78,7 +78,9 @@ export function ProposalList() {
                 <td>{r.client_name || <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
                 <td>{r.company_name || <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
                 <td>
-                  <span className={`status-pill ${r.status}`}>{r.status.replace('_', ' ')}</span>
+                  <span className={`status-pill ${r.status}`}>
+                    {r.status === 'rejected' ? 'Changes requested' : r.status.replace('_', ' ')}
+                  </span>
                   {r.missing_fields.length > 0 && (
                     <span className="status-pill" style={{ marginLeft: 6, color: 'var(--warning)', borderColor: 'var(--warning-border)' }}>
                       {r.missing_fields.length} missing

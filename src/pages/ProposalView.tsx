@@ -253,14 +253,20 @@ export function ProposalView() {
     if (!id || !proposal) return
     setBusy('submit')
     setError(null)
-    const { error } = await supabase.from('proposals').update({ status: 'in_review' }).eq('id', id)
-    if (!error) {
-      await supabase.from('proposal_events').insert({ proposal_id: id, event: 'submitted', ok: true, detail: {} })
-    } else {
-      setError(error.message)
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: await authHeader() },
+        body: JSON.stringify({ proposalId: id }),
+      })
+      const body = await res.json()
+      if (!res.ok || !body.ok) setError(body.error ?? `Submit failed (${res.status})`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Submit request failed')
+    } finally {
+      setBusy(null)
+      await load()
     }
-    setBusy(null)
-    await load()
   }
 
   async function handleSend() {

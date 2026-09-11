@@ -74,6 +74,7 @@ export interface ProposalRecord {
   missing_fields: string[]
   status: string
   share_token: string
+  created_by: string | null
   sent_at: string | null
 }
 
@@ -302,6 +303,90 @@ export interface RestContext {
   url: string
   anonKey: string
   authHeader: string
+}
+
+// Resend's sandbox sender works without a verified domain, but in that mode
+// Resend only delivers to the account owner's own verified address — sending
+// to an arbitrary staff email will need a verified sending domain in Resend.
+// Shared by submit.ts and decide.ts; send.ts keeps its own copy since it is
+// deliberately a separate, opposite-rules code path (see note there).
+export const DEFAULT_FROM = 'Koya <onboarding@resend.dev>'
+
+// Verifies the bearer token against Supabase Auth itself — not a local JWT
+// decode — so a caller's id can be trusted for a role check or for setting
+// decided_by. generate.ts/regenerate.ts/send.ts never needed "who is this,
+// exactly" (RLS scoped to the token is enough for what they do); decide.ts
+// does, to check the reviewer role server-side rather than trusting the UI.
+export async function fetchCallerUser(
+  ctx: RestContext,
+): Promise<{ ok: true; id: string; email: string | null } | { ok: false; status: number; message: string }> {
+  const res = await fetch(`${ctx.url}/auth/v1/user`, {
+    headers: { apikey: ctx.anonKey, Authorization: ctx.authHeader },
+  })
+  if (!res.ok) {
+    return { ok: false, status: 401, message: 'Could not verify the caller session' }
+  }
+  const body = (await res.json().catch(() => ({}))) as { id?: string; email?: string }
+  if (!body.id) {
+    return { ok: false, status: 401, message: 'Could not verify the caller session' }
+  }
+  return { ok: true, id: body.id, email: body.email ?? null }
+}
+
+// Turns whatever a best-effort notification attempt threw into a loggable
+// detail payload. sendResendEmail failures are thrown as an Error carrying
+// an extra `detail` (the provider's response body) via Object.assign; anything
+// else (a thrown string, a network error) just gets its message.
+export function describeNotificationError(err: unknown): Record<string, unknown> {
+  if (err instanceof Error) {
+    const providerBody = (err as Error & { detail?: unknown }).detail
+    return providerBody !== undefined ? { message: err.message, providerBody } : { message: err.message }
+  }
+  return { message: 'Unknown error' }
+}
+
+// Minimal escaping for values interpolated into the notification emails'
+// HTML body — a salesperson's name or a reviewer's comment is free text
+// someone typed, not something to trust as safe markup.
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+// Thin wrapper around the Resend call shared by submit.ts and decide.ts —
+// both send a short, single-recipient-or-list notification and both need the
+// same "did it work, and if not, what did Resend say" shape to log. Distinct
+// from send.ts's own inline call: that path's success/failure directly gates
+// whether `status` becomes `sent` (see enforce_approval_before_send), so it
+// stays separate rather than sharing this helper.
+export async function sendResendEmail(params: {
+  resendKey: string
+  to: string | string[]
+  subject: string
+  html: string
+  text: string
+}): Promise<{ ok: true; id?: string } | { ok: false; status: number; body: unknown }> {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${params.resendKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.RESEND_FROM_EMAIL || DEFAULT_FROM,
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+      text: params.text,
+    }),
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) return { ok: false, status: res.status, body }
+  return { ok: true, id: (body as { id?: string }).id }
 }
 
 export async function restFetch(ctx: RestContext, path: string, init: RequestInit = {}): Promise<Response> {

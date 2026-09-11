@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from 'react'
-import { Routes, Route, Link, Navigate } from 'react-router-dom'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/auth'
+import { supabase } from './lib/supabase'
 import { Login } from './pages/Login'
 import { ProposalList } from './pages/ProposalList'
 import { IntakeForm } from './pages/IntakeForm'
@@ -38,8 +39,39 @@ function AnnouncementBanner() {
   )
 }
 
+// One query, re-run on navigation (Shell sits outside <Routes> and never
+// unmounts, so a mount-only fetch would go stale the moment a reviewer
+// approves/rejects and moves to a different screen). No polling, no
+// real-time subscription — this is a count a reviewer checks by glancing at
+// the nav, not a live counter, and the workflow doesn't need it to be one.
+function useAwaitingReviewCount(role: string | null): number {
+  const location = useLocation()
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (role !== 'reviewer') {
+      setCount(0)
+      return
+    }
+    let cancelled = false
+    supabase
+      .from('proposals')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'in_review')
+      .then(({ count: c }) => {
+        if (!cancelled) setCount(c ?? 0)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [role, location.pathname])
+
+  return count
+}
+
 function Shell({ children }: { children: ReactNode }) {
-  const { status } = useAuth()
+  const { status, role } = useAuth()
+  const awaitingCount = useAwaitingReviewCount(status === 'signed_in' ? role : null)
   return (
     <div className="app-shell">
       {status === 'signed_in' && (
@@ -54,7 +86,14 @@ function Shell({ children }: { children: ReactNode }) {
             <nav>
               {/* No Templates page exists yet — placeholder link until one does. */}
               <Link to="/" className="nav-link">Templates</Link>
-              <Link to="/proposals" className="nav-link">All proposals</Link>
+              <Link to="/proposals" className="nav-link">
+                All proposals
+                {awaitingCount > 0 && (
+                  <span className="nav-badge" title={`${awaitingCount} awaiting your review`}>
+                    {awaitingCount}
+                  </span>
+                )}
+              </Link>
               <Link to="/account" className="nav-avatar" title="Account">
                 <UserIcon />
               </Link>

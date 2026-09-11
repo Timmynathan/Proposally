@@ -6,9 +6,11 @@ import { SECTION_KEYS, type ProposalRow, type ProposalSectionRow, type ProposalA
 import { SectionContent } from '../lib/SectionContent'
 
 // Reviewer-only decision screen. The role check here is a UI convenience —
-// the actual gate is the "reviewers write approvals" RLS policy (Phase 2
-// migration), which rejects the insert below for anyone whose row in `staff`
-// isn't role='reviewer', regardless of what this screen shows or hides.
+// the actual gate is enforced twice over, regardless of what this screen
+// shows or hides: api/decide.ts checks the caller's role in `staff` before
+// writing anything, and the "reviewers write approvals" RLS policy (Phase 2
+// migration) rejects the insert at the database layer even if that check
+// were somehow bypassed.
 export function ReviewScreen() {
   const { id } = useParams<{ id: string }>()
   const { role } = useAuth()
@@ -47,32 +49,28 @@ export function ReviewScreen() {
     setBusy(decision === 'approved' ? 'approve' : 'reject')
     setError(null)
 
-    const { data: userData } = await supabase.auth.getUser()
-    const { error: insertErr } = await supabase.from('proposal_approvals').insert({
-      proposal_id: id,
-      decision,
-      comment: comment.trim() || null,
-      decided_by: userData.user?.id,
-    })
-
-    if (insertErr) {
-      setError(insertErr.message)
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const res = await fetch('/api/decide', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionData.session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ proposalId: id, decision, comment: comment.trim() || null }),
+      })
+      const body = await res.json()
+      if (!res.ok || !body.ok) {
+        setError(body.error ?? `Decision failed (${res.status})`)
+        return
+      }
+      setComment('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Decision request failed')
+    } finally {
       setBusy(null)
-      return
+      await load()
     }
-
-    const { error: updateErr } = await supabase.from('proposals').update({ status: decision }).eq('id', id)
-    if (updateErr) {
-      setError(updateErr.message)
-      setBusy(null)
-      return
-    }
-
-    await supabase.from('proposal_events').insert({ proposal_id: id, event: decision, ok: true, detail: { comment: comment.trim() || null } })
-
-    setBusy(null)
-    setComment('')
-    await load()
   }
 
   if (loading) return <p className="empty-state">Loading…</p>
