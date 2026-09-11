@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { REQUIRED_COMMITMENT_FIELDS, type ProposalIntake, type RequiredCommitmentField } from '../lib/types'
+import { validateIntake } from '../lib/intakeValidation'
 
 // Keep in sync with MAX_FILE_BYTES in api/_lib/fileExtract.ts — checked here too
 // so a too-large file is rejected before spending a round trip on it.
@@ -59,49 +60,6 @@ const EMPTY: ProposalIntake = {
 
 function computeMissingFields(intake: ProposalIntake): RequiredCommitmentField[] {
   return REQUIRED_COMMITMENT_FIELDS.filter((key) => !intake[key]?.trim())
-}
-
-// All 8 fields marked required in the form below — the four commitments
-// plus the four contact/admin fields needed for the document to even make
-// sense (there's no "marker" story for a proposal addressed to no one).
-const REQUIRED_INTAKE_FIELDS: (keyof ProposalIntake)[] = [
-  'client_name',
-  'client_email',
-  'company_name',
-  'client_needs_summary',
-  'project_scope',
-  'recommended_services',
-  'proposed_timeline',
-  'estimated_pricing',
-]
-
-const REQUIRED_FIELD_LABELS: Record<string, string> = {
-  client_name: 'Client name',
-  client_email: 'Client email',
-  company_name: 'Company name',
-  client_needs_summary: "Summary of client's needs",
-  project_scope: 'Project scope',
-  recommended_services: 'Deliverables / services',
-  proposed_timeline: 'Timeline',
-  estimated_pricing: 'Budget',
-}
-
-// Deliberately simple — good enough to catch a typo or a blank field
-// pretending to be an email, not a full RFC 5322 validator.
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-// Blocks generation outright rather than the old "warn but proceed" toast —
-// every field here must be filled, and the email must look like an email,
-// before a proposal (and its draft row) is created at all.
-function validateIntake(intake: ProposalIntake): string | null {
-  const missingLabels = REQUIRED_INTAKE_FIELDS.filter((key) => !intake[key]?.trim()).map((key) => REQUIRED_FIELD_LABELS[key])
-  if (missingLabels.length > 0) {
-    return `Please fill in the following before generating: ${missingLabels.join(', ')}.`
-  }
-  if (!EMAIL_PATTERN.test(intake.client_email.trim())) {
-    return 'Client email doesn\'t look like a valid email address.'
-  }
-  return null
 }
 
 function fileToBase64(file: File): Promise<string> {

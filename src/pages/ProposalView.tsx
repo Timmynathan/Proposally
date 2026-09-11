@@ -15,6 +15,7 @@ import {
   type ProposalApprovalRow,
   type SectionKey,
 } from '../lib/types'
+import { validateIntake } from '../lib/intakeValidation'
 
 const GENERATING_STEPS = [
   'Reviewing the proposal details',
@@ -326,6 +327,21 @@ export function ProposalView() {
   const proposalStatus = proposal.status
   const narrowedProposal = proposal
 
+  // Guards both the initial "Generate proposal" button and "Regenerate
+  // entire proposal" — the two entry points into a full generation that
+  // don't go through IntakeForm.tsx (an existing draft can have a blank or
+  // malformed field if it predates that validation, or if a field was
+  // cleared here via Edit afterward), so the same rule is enforced again
+  // right before the call that would otherwise happily send it to Claude.
+  function handleGenerateClick() {
+    const validationError = validateIntake(narrowedProposal)
+    if (validationError) {
+      setGenError(validationError)
+      return
+    }
+    void runGenerationFlow()
+  }
+
   // Shared between the small capped preview card and the full-screen modal —
   // same document, two different frames around it, so this is computed once
   // rather than duplicated (and risking the two copies drifting apart).
@@ -417,7 +433,7 @@ export function ProposalView() {
       })}
 
       <div style={{ marginBottom: 24 }}>
-        <button onClick={() => void runGenerationFlow()}>Regenerate entire proposal</button>
+        <button onClick={handleGenerateClick}>Regenerate entire proposal</button>
       </div>
 
       <details style={{ marginTop: 24, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
@@ -551,7 +567,7 @@ export function ProposalView() {
             {genError && <div className="banner danger" style={{ marginTop: 8 }}>{genError}</div>}
 
             {!generatingLive && !hasSections && !genError && introPhase !== 'fade' && (
-              <button className="primary" style={{ marginTop: 12 }} onClick={() => void runGenerationFlow()}>
+              <button className="primary" style={{ marginTop: 12 }} onClick={handleGenerateClick}>
                 Generate proposal
               </button>
             )}
